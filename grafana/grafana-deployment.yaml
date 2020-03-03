@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 4
+  labels:
+    app: grafana
+  name: grafana
+  namespace: kube-system
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: grafana
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - command:
+        - grafana-server
+        - -homepath=/usr/share/grafana
+        - -config=/etc/grafana/grafana.ini
+        image: grafana:v6.2.5
+        imagePullPolicy: IfNotPresent
+        name: grafana
+        ports:
+        - containerPort: 9192
+          hostPort: 9192
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 300m
+            memory: 600Mi
+          requests:
+            cpu: 200m
+            memory: 500Mi
+        securityContext:
+          privileged: true
+          procMount: Default
+          runAsUser: 0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/lib/grafana
+          name: data
+        - mountPath: /etc/grafana
+          name: config
+      dnsPolicy: ClusterFirst
+      hostNetwork: true
+      imagePullSecrets:
+      - name: acr-image-pull-secret-vpc
+      nodeSelector:
+        telemetry-service: grafana
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - key: cloud.xxx.cn/role
+        value: telemetry-host
+      volumes:
+      - hostPath:
+          path: /var/lib/grafana
+          type: DirectoryOrCreate
+        name: data
+      - configMap:
+          defaultMode: 420
+          name: grafana-config
+        name: config
