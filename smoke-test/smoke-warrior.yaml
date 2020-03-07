@@ -1,0 +1,52 @@
+---
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: smoke-warrior
+  labels:
+    zone: HD-DEV-A
+spec:
+  template:
+    metadata:
+      labels:
+        app: smoke-warrior
+    spec:
+      containers:
+      - name: smoke-warrior
+        image: busybox:latest
+        command: ["sh", "-c"]
+        args:
+        - while true; do
+            if [[ -e /etc/labels ]]; then
+              echo -en '\n\n'; cat /etc/labels; fi;
+            if [[ -e /etc/annotations ]]; then
+              echo -en '\n\n'; cat /etc/annotations; fi;
+            sleep 10;
+          done;
+        imagePullPolicy: IfNotPresent
+        resources: {}
+#          limits:
+#            cpu: "2"
+#            memory: 1Gi
+#          requests:
+#            cpu: 500m
+#            memory: 1Gi
+#        volumeMounts:
+#        - name: data
+#          mountPath: /data
+      dnsPolicy: Default
+      hostNetwork: true
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 10
+      nodeSelector:
+        smoke: test
+      tolerations:
+      - key: smoke
+        value: test
+#      volumes:
+#      - name: data
+#        flexVolume:
+#          driver: "cloud.ctrip.com/chostpath"
+#          options:
+#            quota-soft: "5Gi" # Mi or Gi
+#            quota-hard: "10Gi" # Mi or Gi hard >= soft
